@@ -1,0 +1,74 @@
+# Project Specific
+﻿dataset
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE - PyCharm/IntelliJ
+.idea/
+
+# IDE - VS Code
+.vscode/
+
+# Environment files
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# Operating system generated files
+.DS_Store       # macOS folder attribute files
+Thumbs.db       # Windows image file cache
+ehthumbs.db
+Desktop.ini
+
+# Private and sensitive data
+secret.py
+*.pem
+*.key
+
+# Log and backup files
+*.log
+*.sql
+dataset
