@@ -1,7 +1,8 @@
 import argparse
 import logging
-from preprocess_data import preprocess_data
+import preprocess_data
 from feature_engineering import create_features
+from train_model import train_model
 # from train_model import train_model
 # from evaluate_model import evaluate_model
 # from generate_progressions import generate
@@ -30,8 +31,9 @@ def main():
             features = create_features(data)
 
         if args.train:
-            # model = train_model(features)
-            pass
+            logging.info("Starting model training...")
+            # You would need to have your labels defined somewhere, or adjust how you handle data
+            model = train_model(features, labels, input_shape=features.shape[1:])  # Assuming features is an array
 
         if args.evaluate:
             # evaluate_model(model)
