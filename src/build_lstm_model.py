@@ -1,6 +1,6 @@
 import tensorflow as tf
-from tensorflow import Sequential
-from tensorflow import LSTM, Dense, Dropout
+from keras.models import Sequential
+from keras.layers import Dense, LSTM, Dropout  
 
 def build_lstm_model(input_shape, num_units=64, dropout_rate=0.3, output_units=1):
     model = Sequential([

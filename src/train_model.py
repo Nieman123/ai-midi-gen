@@ -1,6 +1,6 @@
 from build_lstm_model import build_lstm_model
 
-def train_model(features, labels, input_shape):
+def train_model(X_train, y_train, X_val, y_val, input_shape):
     model = build_lstm_model(input_shape)
-    model.fit(features, labels, epochs=10, batch_size=32, validation_split=0.2)
+    model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_val, y_val))
     return model
