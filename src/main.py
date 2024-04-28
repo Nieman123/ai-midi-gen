@@ -24,11 +24,7 @@ def main():
         if args.preprocess:
             logging.info("Starting preprocessing...")
             logging.info(f"Preprocessed data: {data[:1]}")
-            data = preprocess_data('dataset\dataset.pkl')
-
-        if args.feature_engineering:
-            logging.info("Starting feature creation...")
-            features = create_features(data)
+            features, labels = preprocess_data('dataset\dataset.pkl')
 
         if args.train:
             logging.info("Starting model training...")
