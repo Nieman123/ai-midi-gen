@@ -6,8 +6,8 @@ import numpy as np
 def split_data(features, labels, test_size=0.2, val_size=0.1):
     logging.info(f"Total number of samples: {len(features)}")
 
-    logging.info(f"First label: {labels[0]}, Type: {type(labels[0])}")
-    logging.info(f"Sample labels: {labels[:5]}")
+    # logging.info(f"First label: {labels[0]}, Type: {type(labels[0])}")
+    # logging.info(f"Sample labels: {labels[:5]}")
 
     max_length_features = get_max_length(features)  # Find the max length from the features
     max_length_labels = get_max_length(labels) if isinstance(labels[0], np.ndarray) else None 
