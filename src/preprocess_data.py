@@ -1,4 +1,5 @@
 import pickle
+import logging
 from feature_engineering import create_features
 import numpy as np
 
@@ -18,5 +19,5 @@ def preprocess_data(file_path):
             label_seq = create_features(nmat[1:])
             features.append(feature_seq)
             labels.append(label_seq[:, 2])
-
-        return features, labels
+    
+    return features, labels
