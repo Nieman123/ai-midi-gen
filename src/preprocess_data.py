@@ -18,6 +18,10 @@ def preprocess_data(file_path):
             feature_seq = create_features(nmat[:-1])
             label_seq = create_features(nmat[1:])
             features.append(feature_seq)
-            labels.append(label_seq[:, 2])
+            labels.append(label_seq)
+            # Log the shapes of features and labels to ensure they are as expected
+            logging.debug(f"Processed piece: {piece_name}")
+            logging.debug(f"Feature sequence shape: {feature_seq.shape}")
+            logging.debug(f"Label sequence shape: {label_seq[:, 2].shape}")
     
     return features, labels

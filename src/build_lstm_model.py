@@ -9,8 +9,8 @@ def build_lstm_model(input_shape, num_units=64, dropout_rate=0.3, output_units=2
         LSTM(num_units, return_sequences=True),
         Dropout(dropout_rate),
         Dense(num_units, activation='relu'),
-        Dense(1, activation='sigmoid')  # Assume binary classification for simplicity
+        Dense(3, activation='sigmoid')  # Assume binary classification for simplicity
     ])
     
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
     return model

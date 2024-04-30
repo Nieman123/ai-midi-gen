@@ -1,5 +1,8 @@
 import argparse
 import logging
+import numpy as np
+from keras.models import load_model
+from midi_gen import generate_midi
 from preprocess_data import preprocess_data
 from feature_engineering import create_features
 from train_model import train_model
@@ -39,8 +42,13 @@ def main():
             pass
 
         if args.generate:
-            # generate_progressions(model)
-            pass
+            model = load_model('crappy_midi_gen.keras')
+
+            input_data = np.random.rand(1, 206, 4)  # Adjust shape to match training input
+            predictions = model.predict(input_data)
+            logging.info(str(predictions))
+            generate_midi(predictions, output_file='new_midi_file.mid')
+
 
     except Exception as e:
         logging.error(f"Error occurred: {e}")
