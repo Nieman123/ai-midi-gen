@@ -1,6 +1,6 @@
 import pickle
 import logging
-from feature_engineering import create_features
+from feature_engineering import create_features, find_max_duration
 import numpy as np
 
 def preprocess_data(file_path):
@@ -10,6 +10,9 @@ def preprocess_data(file_path):
 
         features = []
         labels = []
+
+    max_duration = find_max_duration(dataset)
+    print("Maximum duration found:", max_duration)
 
     # Loop through each piece in the dataset
     for piece_name, piece_data in dataset.items():

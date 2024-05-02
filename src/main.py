@@ -4,7 +4,7 @@ import numpy as np
 from keras.models import load_model
 from midi_gen import generate_midi
 from preprocess_data import preprocess_data
-from feature_engineering import create_features
+from feature_engineering import find_max_duration
 from train_model import train_model
 from split_data import split_data
 

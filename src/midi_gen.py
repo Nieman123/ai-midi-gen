@@ -7,16 +7,19 @@ def generate_midi(predictions, output_file='generated_midi.mid'):
     track = MidiTrack()
     mid.tracks.append(track)
 
-    predictions = predictions.reshape(-1, 3)  # Ensure predictions are in shape (n_steps, 3)
+    # Ensure predictions are in shape (n_steps, 4)
+    predictions = predictions.reshape(-1, 4)
 
-    for prediction in predictions[0]:  # Accessing the first element of the batch
-            pitch = int(prediction[0] * 127)
-            velocity = int(prediction[1] * 127)
-            duration = int(prediction[2] * 500)
+    # Iterate over each set of predictions
+    for prediction in predictions:
+        pitch = int(prediction[2] * 127)  # Assuming the third feature is pitch
+        velocity = int(prediction[3] * 127)  # Assuming the fourth feature is velocity
+        duration = int(prediction[1] * 500)  # Assuming the second feature is duration
 
-            track.append(Message('note_on', note=pitch, velocity=velocity, time=0))
-            track.append(Message('note_off', note=pitch, velocity=velocity, time=duration))
+        # Append a note on and note off message
+        track.append(Message('note_on', note=pitch, velocity=velocity, time=0))
+        track.append(Message('note_off', note=pitch, velocity=velocity, time=duration))
 
-
+    # Save the MIDI file
     mid.save(output_file)
     print(f"MIDI file saved as {output_file}")

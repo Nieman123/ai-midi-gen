@@ -24,3 +24,13 @@ def normalize_durations(starts, ends, max_duration):
 def normalize_quantized_starts(starts, total_positions):
     """ Normalize quantized start times to a range between 0 and 1. """
     return starts / (total_positions - 1) 
+
+def find_max_duration(dataset):
+    max_duration = 0
+    for piece_data in dataset.values():
+        nmat = np.array(piece_data['nmat'])
+        durations = nmat[:, 1] - nmat[:, 0]
+        local_max = np.max(durations)
+        if local_max > max_duration:
+            max_duration = local_max
+    return max_duration
