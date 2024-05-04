@@ -12,22 +12,31 @@ def preprocess_data(file_path):
     features = []
     labels = []
 
-    # Iterate through each piece in the dataset
+# Iterate through each piece in the dataset
     for piece_name, piece_data in dataset.items():
         nmat = np.array(piece_data['nmat'])  # Convert to numpy array for easier manipulation
-        grouped_notes = group_notes_by_chord(nmat)  # Group notes into chords and melody
+        chords, melodies = group_notes_by_roles(nmat)  # Separate chords and melodies
 
-        for i in range(len(grouped_notes) - 1):
-            current_group = grouped_notes[i]
-            next_group = grouped_notes[i + 1]
+        logging.info(f"Processing piece: {piece_name}")
 
-            # Separate handling for chords and melody
-            chord_features, melody_features = separate_chords_melody(current_group)
-            chord_labels, melody_labels = separate_chords_melody(next_group)
+        for i in range(len(chords) - 1):
+            current_chord = chords[i]
+            next_chord = chords[i + 1]
+            current_melody = melodies[i] if i < len(melodies) else np.array([], dtype=float)
+            next_melody = melodies[i + 1] if i + 1 < len(melodies) else np.array([], dtype=float)
+
+            logging.info(f"Current chord shape: {current_chord.shape}")
+            logging.info(f"Next chord shape: {next_chord.shape}")
+
+            # Create features and labels for chords and melodies
+            chord_features = create_features(current_chord)
+            melody_features = create_features(current_melody)
+            chord_labels = create_features(next_chord)
+            melody_labels = create_features(next_melody)
 
             # Combine chord and melody features into one vector
-            feature_vector = np.concatenate([chord_features, melody_features])
-            label_vector = np.concatenate([chord_labels, melody_labels])
+            feature_vector = np.concatenate((chord_features, melody_features))
+            label_vector = np.concatenate((chord_labels, melody_labels))
 
             features.append(feature_vector)
             labels.append(label_vector)
@@ -38,6 +47,36 @@ def preprocess_data(file_path):
             logging.info(f"Label vector shape: {label_vector.shape}")
 
     return np.array(features), np.array(labels)
+
+def group_notes_by_roles(nmat):
+    log = False
+    # Group notes initially by start time and duration
+    grouped_notes = group_notes_by_chord(nmat)
+    
+    chords = []
+    melodies = []
+    
+    # Further classify the grouped notes
+    for index, group in enumerate(grouped_notes):
+        if log: logging.info(f"Processing group {index} with {len(group)} notes")
+        
+        if len(group) > 1:
+            # Typically, a chord is expected to have multiple notes played together
+            chords.extend(group)  # Add all notes in this group to chords
+            if log: logging.info(f"Added to chords: {group}")
+        else:
+            # Single notes or uniquely timed notes can be considered part of the melody
+            melodies.extend(group)
+            if log: logging.info(f"Added to melodies: {group}")
+    
+    if log: logging.info(f"Total chords collected: {len(chords)}")
+    if log: logging.info(f"Total melodies collected: {len(melodies)}")
+
+     # Ensure the output is always a 2D array
+    chords = np.array(chords).reshape(-1, 4) if chords else np.empty((0, 4))
+    melodies = np.array(melodies).reshape(-1, 4) if melodies else np.empty((0, 4))
+    
+    return chords, melodies
 
 def group_notes_by_chord(nmat):
     """ Group notes by their start times and durations into chords and melodies. """
