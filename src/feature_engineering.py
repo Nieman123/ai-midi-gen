@@ -1,12 +1,32 @@
+import logging
 import numpy as np 
 
-def create_features(notes, total_positions=8):  # Example max_duration, adjust based on data exploration
-    """ Create a feature matrix from notes data. """
+def create_features(notes, total_positions=8, num_features=4):
+    logging.info(f"Notes shape: {notes.shape} with data: {notes}")
+
+    """ Create a feature matrix from notes data. Ensure the input is not empty and has the expected dimensions. """
+    
+    if len(notes) == 0:
+        return np.zeros((total_positions, num_features))
+
+    # Ensure notes are at least 2D (even if it's a single note)
+    if notes.ndim == 1:
+        notes = np.expand_dims(notes, axis=0)
+
+    logging.info(f"Notes shape: {notes.shape} with data: {notes}")
+
+    #  # Ensure notes are always treated as a 2D array
+    # if notes.ndim == 1:
+    #     notes = np.array([notes])
+
     pitches = normalize_pitch(notes[:, 2])
     velocities = normalize_velocity(notes[:, 3])
     normalized_starts = normalize_quantized_starts(notes[:, 0], total_positions)
     durations = normalize_durations(notes[:, 0], notes[:, 1], max_duration=500)
+    
+    # Stack features along the second axis to form a matrix of shape (number of notes, number of features)
     return np.stack([normalized_starts, durations, pitches, velocities], axis=1)
+
 
 def normalize_pitch(pitches):
     """ Normalize MIDI pitches to a 0-1 range based on MIDI standards (0-127). """
