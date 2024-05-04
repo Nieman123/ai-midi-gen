@@ -23,6 +23,11 @@ def create_features(notes, total_positions=8, num_features=4):
     velocities = normalize_velocity(notes[:, 3])
     normalized_starts = normalize_quantized_starts(notes[:, 0], total_positions)
     durations = normalize_durations(notes[:, 0], notes[:, 1], max_duration=500)
+
+    features = np.stack([normalized_starts, durations, pitches, velocities], axis=1)
+
+    # Log the final feature matrix
+    logging.info(f"Final feature matrix shape: {features.shape} with data: {features}")
     
     # Stack features along the second axis to form a matrix of shape (number of notes, number of features)
     return np.stack([normalized_starts, durations, pitches, velocities], axis=1)

@@ -29,7 +29,25 @@ def main():
         if args.preprocess:
             logging.info("Starting preprocessing...")
             features, labels = preprocess_data('dataset\dataset.pkl')
-            logging.info(f"Sample preprocessed data: {features[:1]}")
+
+            sample_count = min(len(features), 5)  # Ensure not to sample more than exists
+            if sample_count > 0:
+                # Generate random indices
+                indices = np.random.choice(len(features), sample_count, replace=False)
+
+                # Log information about the randomly selected samples
+                for idx in indices:
+                    logging.info(f"Random Sample features at index {idx}: {features[idx]}")
+                    logging.info(f"Random Sample labels at index {idx}: {labels[idx]}")
+                    logging.info(f"Shape of features at index {idx}: {features[idx].shape}")
+                    logging.info(f"Shape of labels at index {idx}: {labels[idx].shape}")
+
+                # Optional: Log statistical summary
+                logging.info(f"Features mean: {np.mean(features, axis=0)}")
+                logging.info(f"Features std dev: {np.std(features, axis=0)}")
+                logging.info(f"Labels mean: {np.mean(labels, axis=0)}")
+                logging.info(f"Labels std dev: {np.std(labels, axis=0)}")
+
 
         if args.train:
             if features is None or labels is None:
@@ -47,7 +65,7 @@ def main():
         if args.generate:
             model = load_model('crappy_midi_gen.keras')
 
-            input_data = np.random.rand(1, 206, 4)  # Adjust shape to match training input
+            input_data = np.random.rand(1, 9, 4)  # Adjust shape to match training input
             predictions = model.predict(input_data)
             logging.info(str(predictions))
             generate_midi(predictions, output_file='new_midi_file.mid')

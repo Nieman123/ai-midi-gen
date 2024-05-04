@@ -5,6 +5,7 @@ from feature_engineering import create_features, find_max_duration
 import numpy as np
 
 def preprocess_data(file_path):
+    log = False
     # Load the dataset
     with open(file_path, 'rb') as file:
         dataset = pickle.load(file)
@@ -17,7 +18,7 @@ def preprocess_data(file_path):
         nmat = np.array(piece_data['nmat'])  # Convert to numpy array for easier manipulation
         chords, melodies = group_notes_by_roles(nmat)  # Separate chords and melodies
 
-        logging.info(f"Processing piece: {piece_name}")
+        if log: logging.info(f"Processing piece: {piece_name}")
 
         for i in range(len(chords) - 1):
             current_chord = chords[i]
@@ -25,8 +26,8 @@ def preprocess_data(file_path):
             current_melody = melodies[i] if i < len(melodies) else np.array([], dtype=float)
             next_melody = melodies[i + 1] if i + 1 < len(melodies) else np.array([], dtype=float)
 
-            logging.info(f"Current chord shape: {current_chord.shape}")
-            logging.info(f"Next chord shape: {next_chord.shape}")
+            if log: logging.info(f"Current chord shape: {current_chord.shape}")
+            if log: logging.info(f"Next chord shape: {next_chord.shape}")
 
             # Create features and labels for chords and melodies
             chord_features = create_features(current_chord)
@@ -42,9 +43,9 @@ def preprocess_data(file_path):
             labels.append(label_vector)
 
             # Logging the processing information
-            logging.info(f"Processed piece: {piece_name}, Group index: {i}")
-            logging.info(f"Feature vector shape: {feature_vector.shape}")
-            logging.info(f"Label vector shape: {label_vector.shape}")
+            if log: logging.info(f"Processed piece: {piece_name}, Group index: {i}")
+            if log: logging.info(f"Feature vector shape: {feature_vector.shape}")
+            if log: logging.info(f"Label vector shape: {label_vector.shape}")
 
     return np.array(features), np.array(labels)
 
