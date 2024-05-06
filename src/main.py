@@ -65,7 +65,7 @@ def main():
         if args.generate:
             model = load_model('crappy_midi_gen.keras')
 
-            input_data = np.random.rand(1, 9, 4)  # Adjust shape to match training input
+            input_data = np.random.rand(1, 2, 4)  # Adjust shape to match training input
             predictions = model.predict(input_data)
             logging.info(str(predictions))
             generate_midi(predictions, output_file='new_midi_file.mid')

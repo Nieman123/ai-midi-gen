@@ -5,7 +5,7 @@ from feature_engineering import create_features, find_max_duration
 import numpy as np
 
 def preprocess_data(file_path):
-    log = False
+    log = True  # Set to True for detailed debugging
     # Load the dataset
     with open(file_path, 'rb') as file:
         dataset = pickle.load(file)
@@ -13,12 +13,15 @@ def preprocess_data(file_path):
     features = []
     labels = []
 
-# Iterate through each piece in the dataset
+    # Iterate through each piece in the dataset
     for piece_name, piece_data in dataset.items():
         nmat = np.array(piece_data['nmat'])  # Convert to numpy array for easier manipulation
         chords, melodies = group_notes_by_roles(nmat)  # Separate chords and melodies
 
         if log: logging.info(f"Processing piece: {piece_name}")
+        if log: logging.info(f"Chord data: {chords}")
+        if log: logging.info(f"Melody data: {chords}")
+
 
         for i in range(len(chords) - 1):
             current_chord = chords[i]
@@ -26,28 +29,27 @@ def preprocess_data(file_path):
             current_melody = melodies[i] if i < len(melodies) else np.array([], dtype=float)
             next_melody = melodies[i + 1] if i + 1 < len(melodies) else np.array([], dtype=float)
 
-            if log: logging.info(f"Current chord shape: {current_chord.shape}")
-            if log: logging.info(f"Next chord shape: {next_chord.shape}")
+            if log: logging.info(f"Current chord data: {current_chord}, Next chord data: {next_chord}")
+            if log: logging.info(f"Current melody data: {current_melody}, Next melody data: {next_melody}")
 
-            # Create features and labels for chords and melodies
             chord_features = create_features(current_chord)
             melody_features = create_features(current_melody)
             chord_labels = create_features(next_chord)
             melody_labels = create_features(next_melody)
 
-            # Combine chord and melody features into one vector
+            if log: logging.info(f"Chord features: {chord_features}, Melody features: {melody_features}")
+            if log: logging.info(f"Chord labels: {chord_labels}, Melody labels: {melody_labels}")
+
             feature_vector = np.concatenate((chord_features, melody_features))
             label_vector = np.concatenate((chord_labels, melody_labels))
 
             features.append(feature_vector)
             labels.append(label_vector)
 
-            # Logging the processing information
-            if log: logging.info(f"Processed piece: {piece_name}, Group index: {i}")
-            if log: logging.info(f"Feature vector shape: {feature_vector.shape}")
-            if log: logging.info(f"Label vector shape: {label_vector.shape}")
+            if log: logging.info(f"Feature vector shape: {feature_vector.shape}, Label vector shape: {label_vector.shape}")
 
     return np.array(features), np.array(labels)
+
 
 def group_notes_by_roles(nmat):
     log = False
@@ -72,7 +74,9 @@ def group_notes_by_roles(nmat):
     
     if log: logging.info(f"Total chords collected: {len(chords)}")
     if log: logging.info(f"Total melodies collected: {len(melodies)}")
-
+    if log: logging.info(f"Grouped notes: {grouped_notes}")
+    if log: logging.info(f"Melody notes: {melodies}")
+    if log: logging.info(f"Chord notes: {chords}")
      # Ensure the output is always a 2D array
     chords = np.array(chords).reshape(-1, 4) if chords else np.empty((0, 4))
     melodies = np.array(melodies).reshape(-1, 4) if melodies else np.empty((0, 4))

@@ -2,22 +2,20 @@ import logging
 import numpy as np 
 
 def create_features(notes, total_positions=8, num_features=4):
-    logging.info(f"Notes shape: {notes.shape} with data: {notes}")
+    log = False
+
+    if log: logging.info(f"Notes shape: {notes.shape} with data: {notes}")
 
     """ Create a feature matrix from notes data. Ensure the input is not empty and has the expected dimensions. """
     
     if len(notes) == 0:
-        return np.zeros((total_positions, num_features))
+        return np.zeros((0, num_features))
 
     # Ensure notes are at least 2D (even if it's a single note)
     if notes.ndim == 1:
         notes = np.expand_dims(notes, axis=0)
 
-    logging.info(f"Notes shape: {notes.shape} with data: {notes}")
-
-    #  # Ensure notes are always treated as a 2D array
-    # if notes.ndim == 1:
-    #     notes = np.array([notes])
+    if log: logging.info(f"Notes shape: {notes.shape} with data: {notes}")
 
     pitches = normalize_pitch(notes[:, 2])
     velocities = normalize_velocity(notes[:, 3])
@@ -27,10 +25,10 @@ def create_features(notes, total_positions=8, num_features=4):
     features = np.stack([normalized_starts, durations, pitches, velocities], axis=1)
 
     # Log the final feature matrix
-    logging.info(f"Final feature matrix shape: {features.shape} with data: {features}")
+    if log: logging.info(f"Final feature matrix shape: {features.shape} with data: {features}")
     
-    # Stack features along the second axis to form a matrix of shape (number of notes, number of features)
-    return np.stack([normalized_starts, durations, pitches, velocities], axis=1)
+    return features
+
 
 
 def normalize_pitch(pitches):
