@@ -20,10 +20,11 @@ def preprocess_data(file_path):
 
         if log: logging.info(f"Processing piece: {piece_name}")
         if log: logging.info(f"Chord data: {chords}")
-        if log: logging.info(f"Melody data: {chords}")
+        if log: logging.info(f"Melody data: {melodies}")
 
+        max_length = max(len(chords), len(melodies))
 
-        for i in range(len(chords) - 1):
+        for i in range(max_length - 1):
             current_chord = chords[i]
             next_chord = chords[i + 1]
             current_melody = melodies[i] if i < len(melodies) else np.array([], dtype=float)
