@@ -4,7 +4,7 @@ import random
 from feature_engineering import create_features, find_max_duration
 import numpy as np
 
-def preprocess_data(file_path):
+def preprocess_data(file_path, sequence_length=16):
     log = True  # Set to True for detailed debugging
     # Load the dataset
     with open(file_path, 'rb') as file:
@@ -15,39 +15,27 @@ def preprocess_data(file_path):
 
     # Iterate through each piece in the dataset
     for piece_name, piece_data in dataset.items():
-        nmat = np.array(piece_data['nmat'])  # Convert to numpy array for easier manipulation
-        chords, melodies = group_notes_by_roles(nmat)  # Separate chords and melodies
+        notes = np.array(piece_data['nmat'])  # Convert to numpy array for easier manipulation
 
-        if log: logging.info(f"Processing piece: {piece_name}")
-        if log: logging.info(f"Chord data: {chords}")
-        if log: logging.info(f"Melody data: {melodies}")
+        indices = np.argsort(notes[:, 0])
+        notes = notes[indices]
 
-        max_length = max(len(chords), len(melodies))
+        if log:
+            logging.info(f"Processing piece: {piece_name}")
+            logging.info(f"Combined note data: {notes}")
 
-        for i in range(max_length - 1):
-            current_chord = chords[i]
-            next_chord = chords[i + 1]
-            current_melody = melodies[i] if i < len(melodies) else np.array([], dtype=float)
-            next_melody = melodies[i + 1] if i + 1 < len(melodies) else np.array([], dtype=float)
+        for i in range(len(notes) - sequence_length):
+            window = notes[i:i+sequence_length]
+            next_window = notes[i+1:i+1+sequence_length]
 
-            if log: logging.info(f"Current chord data: {current_chord}, Next chord data: {next_chord}")
-            if log: logging.info(f"Current melody data: {current_melody}, Next melody data: {next_melody}")
-
-            chord_features = create_features(current_chord)
-            melody_features = create_features(current_melody)
-            chord_labels = create_features(next_chord)
-            melody_labels = create_features(next_melody)
-
-            if log: logging.info(f"Chord features: {chord_features}, Melody features: {melody_features}")
-            if log: logging.info(f"Chord labels: {chord_labels}, Melody labels: {melody_labels}")
-
-            feature_vector = np.concatenate((chord_features, melody_features))
-            label_vector = np.concatenate((chord_labels, melody_labels))
+            feature_vector = create_features(window, sequence_length)
+            label_vector = create_features(next_window, sequence_length)
 
             features.append(feature_vector)
             labels.append(label_vector)
 
-            if log: logging.info(f"Feature vector shape: {feature_vector.shape}, Label vector shape: {label_vector.shape}")
+            if log:
+                logging.info(f"Feature vector shape: {feature_vector.shape}, Label vector shape: {label_vector.shape}")
 
     return np.array(features), np.array(labels)
 

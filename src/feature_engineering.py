@@ -1,33 +1,37 @@
 import logging
 import numpy as np 
 
-def create_features(notes, total_positions=8, num_features=4):
-    log = False
+def create_features(notes, sequence_length=16, num_features_per_note=4):
+    log = True  # Set this to True if you want detailed logging
 
-    if log: logging.info(f"Notes shape: {notes.shape} with data: {notes}")
+    if log:
+        logging.info(f"Notes shape: {notes.shape} with data: {notes}")
 
-    """ Create a feature matrix from notes data. Ensure the input is not empty and has the expected dimensions. """
-    
-    if len(notes) == 0:
-        return np.zeros((0, num_features))
+    # Initialize a feature matrix for all notes in the sequence
+    if notes.size == 0:
+        # Return a zero-filled vector if there are no notes
+        return np.zeros((sequence_length * num_features_per_note,))
 
     # Ensure notes are at least 2D (even if it's a single note)
     if notes.ndim == 1:
         notes = np.expand_dims(notes, axis=0)
 
-    if log: logging.info(f"Notes shape: {notes.shape} with data: {notes}")
-
+    # Normalization steps
     pitches = normalize_pitch(notes[:, 2])
     velocities = normalize_velocity(notes[:, 3])
-    normalized_starts = normalize_quantized_starts(notes[:, 0], total_positions)
+    normalized_starts = normalize_quantized_starts(notes[:, 0], sequence_length)
     durations = normalize_durations(notes[:, 0], notes[:, 1], max_duration=500)
 
+    # Create a feature matrix for this sequence
     features = np.stack([normalized_starts, durations, pitches, velocities], axis=1)
 
-    # Log the final feature matrix
-    if log: logging.info(f"Final feature matrix shape: {features.shape} with data: {features}")
-    
-    return features
+    # Flatten the feature matrix to create a single feature vector
+    feature_vector = features.flatten()
+
+    if log:
+        logging.info(f"Final feature vector shape: {feature_vector.shape} with data: {feature_vector}")
+
+    return feature_vector
 
 
 
