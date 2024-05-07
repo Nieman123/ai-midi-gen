@@ -72,3 +72,4 @@ secret.py
 *.log
 *.sql
 dataset
+*.keras
