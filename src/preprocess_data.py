@@ -5,10 +5,14 @@ from feature_engineering import create_features, find_max_duration
 import numpy as np
 
 def preprocess_data(file_path, sequence_length=16):
-    log = True  # Set to True for detailed debugging
+    log = False  # Set to True for detailed debugging
     # Load the dataset
     with open(file_path, 'rb') as file:
         dataset = pickle.load(file)
+
+    max_duration = find_max_duration(dataset)
+    
+    logging.info(f"Max duration: {max_duration}")
 
     features = []
     labels = []
@@ -28,8 +32,8 @@ def preprocess_data(file_path, sequence_length=16):
             window = notes[i:i+sequence_length]
             next_window = notes[i+1:i+1+sequence_length]
 
-            feature_vector = create_features(window, sequence_length)
-            label_vector = create_features(next_window, sequence_length)
+            feature_vector = create_features(window, sequence_length, max_duration)
+            label_vector = create_features(next_window, sequence_length, max_duration)
 
             features.append(feature_vector)
             labels.append(label_vector)

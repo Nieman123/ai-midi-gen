@@ -1,8 +1,8 @@
 import logging
 import numpy as np 
 
-def create_features(notes, sequence_length=16, num_features_per_note=4):
-    log = True  # Set this to True if you want detailed logging
+def create_features(notes, sequence_length=16, num_features_per_note=4, max_duration=16):
+    log = False  # Set this to True if you want detailed logging
 
     if log:
         logging.info(f"Notes shape: {notes.shape} with data: {notes}")
@@ -20,7 +20,7 @@ def create_features(notes, sequence_length=16, num_features_per_note=4):
     pitches = normalize_pitch(notes[:, 2])
     velocities = normalize_velocity(notes[:, 3])
     normalized_starts = normalize_quantized_starts(notes[:, 0], sequence_length)
-    durations = normalize_durations(notes[:, 0], notes[:, 1], max_duration=500)
+    durations = normalize_durations(notes[:, 0], notes[:, 1], max_duration)
 
     # Create a feature matrix for this sequence
     features = np.stack([normalized_starts, durations, pitches, velocities], axis=1)
