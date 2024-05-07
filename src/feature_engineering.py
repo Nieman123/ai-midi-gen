@@ -44,9 +44,11 @@ def normalize_velocity(velocities):
     return velocities / 127.0
 
 def normalize_durations(starts, ends, max_duration):
-    """ Normalize durations by a predetermined maximum duration to ensure consistency across the dataset. """
+    """ Normalize durations using logarithmic scaling. """
     durations = ends - starts
-    return durations / max_duration
+    # Applying logarithmic normalization with a small constant to avoid log(0)
+    log_normalized_durations = np.log1p(durations) / np.log1p(max_duration)
+    return log_normalized_durations
 
 def normalize_quantized_starts(starts, total_positions):
     """ Normalize quantized start times to a range between 0 and 1. """

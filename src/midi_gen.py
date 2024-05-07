@@ -7,6 +7,7 @@ import time
 def generate_midi(predictions, output_file='generated_midi.mid', ticks_per_beat=480, max_duration=13):
     # Assume each eighth note is half of a quarter note
     eighth_note_ticks = ticks_per_beat // 2
+    max_log_duration = np.log1p(max_duration)
     total_ticks_for_max_duration = eighth_note_ticks * max_duration  # Total ticks that max_duration corresponds to
 
     mid = MidiFile(ticks_per_beat=ticks_per_beat)
@@ -27,7 +28,8 @@ def generate_midi(predictions, output_file='generated_midi.mid', ticks_per_beat=
         pitch = int(prediction[2] * 127)  # Assuming the third feature is pitch
         velocity = int(prediction[3] * 127)  # Assuming the fourth feature is velocity
         normalized_duration = prediction[1]
-        duration_ticks = int(normalized_duration * total_ticks_for_max_duration)  # Reverse the normalization
+        duration = np.expm1(normalized_duration * max_log_duration)
+        duration_ticks = int(duration * eighth_note_ticks)
 
         # Calculate delta time as the difference from the last note's start time
         delta_time = start_time - last_start_time
