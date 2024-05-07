@@ -1,6 +1,8 @@
 from mido import MidiFile, MidiTrack, Message
 import logging
 import numpy as np
+import pygame
+import time
 
 def generate_midi(predictions, output_file='generated_midi.mid', ticks_per_beat=480, max_duration=13):
     # Assume each eighth note is half of a quarter note
@@ -45,3 +47,25 @@ def generate_midi(predictions, output_file='generated_midi.mid', ticks_per_beat=
     # Save the MIDI file
     mid.save(output_file)
     print(f"MIDI file saved as {output_file}")
+    play_midi(output_file)
+
+def play_midi(midi_file):
+    freq = 44100    # audio CD quality
+    bitsize = -16   # unsigned 16 bit
+    channels = 2    # 1 is mono, 2 is stereo
+    buffer = 1024   # number of samples (experiment to get right sound)
+    pygame.mixer.init(freq, bitsize, channels, buffer)
+    pygame.mixer.music.set_volume(1.0)
+    clock = pygame.time.Clock()
+
+    try:
+        pygame.mixer.music.load(midi_file)
+        print("Music file {} loaded!".format(midi_file))
+    except pygame.error:
+        print("File {} not found! ({})".format(midi_file, pygame.get_error()))
+        return
+
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        # check if playback has finished
+        clock.tick(30)
