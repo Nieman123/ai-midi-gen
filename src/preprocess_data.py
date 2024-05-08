@@ -1,111 +1,81 @@
-import pickle
 import logging
 import random
-from feature_engineering import create_features, find_max_duration
 import numpy as np
+import pickle
+
+vocab = {
+    'pitch': {pitch: idx for idx, pitch in enumerate(range(21, 109), 1)},  # MIDI pitches range from 21 to 108
+    'velocity': {vel: idx+89 for idx, vel in enumerate(range(128))},  # MIDI velocities range from 0 to 127, index starts after pitch
+    'duration': {dur: idx+217 for idx, dur in enumerate(range(16))},  # 16 possible durations, index starts after velocity
+    'start_time': {start: idx+233 for idx, start in enumerate(range(16))},  # 16 possible start times, index starts after duration
+    'root': {root: idx+249 for idx, root in enumerate(range(12))},  # 12 roots, index starts after start_time
+    'mode': {'M': 261, 'm': 262},  # Two modes, index starts after root
+    'style': {'pop_standard': 263, 'pop_complex': 264, 'dark': 265, 'r&b': 266, 'unknown': 267},  # Five styles, index starts after mode
+    'tonic': {note: idx+268 for idx, note in enumerate(['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'])}  # 12 tonics, index starts after style
+}
 
 def preprocess_data(file_path, sequence_length=16):
-    log = False  # Set to True for detailed debugging
+    log = True  # Set to True for detailed debugging
     # Load the dataset
     with open(file_path, 'rb') as file:
         dataset = pickle.load(file)
 
-    max_duration = find_max_duration(dataset)
-    
-    logging.info(f"Max duration: {max_duration}")
-
-    features = []
-    labels = []
+    input_sequences = []
+    target_sequences = []
 
     # Iterate through each piece in the dataset
     for piece_name, piece_data in dataset.items():
         notes = np.array(piece_data['nmat'])  # Convert to numpy array for easier manipulation
-
-        indices = np.argsort(notes[:, 0])
+        indices = np.argsort(notes[:, 0])     # Sort notes by start time
         notes = notes[indices]
+        root_data = piece_data['root']  # This is a 2D matrix where each row corresponds to a bar
 
         if log:
             logging.info(f"Processing piece: {piece_name}")
             logging.info(f"Combined note data: {notes}")
+            logging.info(f"Root data: {root_data}")
 
         for i in range(len(notes) - sequence_length):
-            window = notes[i:i+sequence_length]
-            next_window = notes[i+1:i+1+sequence_length]
+            sequence = notes[i:i+sequence_length + 1]  # Plus one to include the next note in the sequence
+            tokenized_sequence = [tokenize_note(note, root_data, piece_data, vocab) for note in sequence]
 
-            feature_vector = create_features(window, sequence_length, max_duration)
-            label_vector = create_features(next_window, sequence_length, max_duration)
+            input_seq = np.concatenate(tokenized_sequence[:-1])  # All but last note tokens
+            target_seq = np.concatenate(tokenized_sequence[1:])  # All but first note tokens
 
-            features.append(feature_vector)
-            labels.append(label_vector)
+            input_sequences.append(input_seq)
+            target_sequences.append(target_seq)
 
             if log:
-                logging.info(f"Feature vector shape: {feature_vector.shape}, Label vector shape: {label_vector.shape}")
+                logging.info(f"Input sequence length: {len(input_seq)}, Target sequence length: {len(target_seq)}")
 
-    return np.array(features), np.array(labels)
+    return np.array(input_sequences), np.array(target_sequences)
 
-
-def group_notes_by_roles(nmat):
-    log = False
-    # Group notes initially by start time and duration
-    grouped_notes = group_notes_by_chord(nmat)
-    
-    chords = []
-    melodies = []
-    
-    # Further classify the grouped notes
-    for index, group in enumerate(grouped_notes):
-        if log: logging.info(f"Processing group {index} with {len(group)} notes")
-        
-        if len(group) > 1:
-            # Typically, a chord is expected to have multiple notes played together
-            chords.extend(group)  # Add all notes in this group to chords
-            if log: logging.info(f"Added to chords: {group}")
-        else:
-            # Single notes or uniquely timed notes can be considered part of the melody
-            melodies.extend(group)
-            if log: logging.info(f"Added to melodies: {group}")
-    
-    if log: logging.info(f"Total chords collected: {len(chords)}")
-    if log: logging.info(f"Total melodies collected: {len(melodies)}")
-    if log: logging.info(f"Grouped notes: {grouped_notes}")
-    if log: logging.info(f"Melody notes: {melodies}")
-    if log: logging.info(f"Chord notes: {chords}")
-     # Ensure the output is always a 2D array
-    chords = np.array(chords).reshape(-1, 4) if chords else np.empty((0, 4))
-    melodies = np.array(melodies).reshape(-1, 4) if melodies else np.empty((0, 4))
-    
-    return chords, melodies
-
-def group_notes_by_chord(nmat):
-    """ Group notes by their start times and durations into chords and melodies. """
-    note_groups = {}
-    for note in nmat:
-        start_time = note[0]
-        duration = note[1] - note[0]
-        group_key = (start_time, duration)  # Group by both start and duration
-
-        if group_key not in note_groups:
-            note_groups[group_key] = []
-        note_groups[group_key].append(note)
-
-    # Collect groups in order of their start times
-    return [note_groups[key] for key in sorted(note_groups, key=lambda x: x[0])]
-
-def separate_chords_melody(notes):
-    # Assuming chords are notes with the same start time and similar durations
-    # Melody notes may have unique timings or extended durations
-    chords = []
-    melody = []
-    if not notes:
-        return np.array([]), np.array([])
-    # Example logic, needs refining based on actual data characteristics
-    duration_threshold = np.median([note[1] - note[0] for note in notes])  # median duration
-    for note in notes:
-        if note[1] - note[0] < duration_threshold:
-            chords.append(note)
-        else:
-            melody.append(note)
-    return create_features(chords), create_features(melody)
+def tokenize_note(note, root_data, piece_data, vocab):
+    logging.info("Tokenizing Note")
+    start, end, pitch, velocity = note
+    duration = end - start
+    logging.info("Calculating Bar")
+    bar = start // 8  # Each bar contains 8 eighth notes
+    position = start % 8
+    logging.info(f"Bar: {bar} Position: {position}")
+    # Safeguard for index out of range
+    if bar >= len(root_data) or position >= len(root_data[bar]):
+        logging.warning(f"Root data index out of range: bar={bar}, position={position}")
+        root_note = 0
+    else:
+        root_note = root_data[bar][position]
+    logging.info(f"Root note: {root_note}")
+    tokens = [
+        vocab['start_time'].get(start, 0),
+        vocab['duration'].get(duration, 0),
+        vocab['pitch'].get(pitch, 0),
+        vocab['velocity'].get(velocity, 0),
+        vocab['root'].get(root_note, 0),
+        vocab['mode'][piece_data['mode']],
+        vocab['style'][piece_data['style']],
+        vocab['tonic'][piece_data['tonic']]
+    ]
+    return tokens
 
 def explore_data(dataset):
     import matplotlib.pyplot as plt
@@ -148,6 +118,7 @@ def explore_data(dataset):
     # Output some examples from the dataset
     for name, example in examples:
         print(f"Example from {name}:")
+        print(f"Note data: {example}")
         print("Starts, Ends, Pitches, Velocities")
         for note in example:
             print(f"{note[0]}, {note[1]}, {note[2]}, {note[3]}")

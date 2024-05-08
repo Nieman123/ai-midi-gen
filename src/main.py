@@ -10,6 +10,7 @@ from train_model import train_model
 from split_data import split_data
 
 def main():
+    
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(description="AI MIDI Generator")
