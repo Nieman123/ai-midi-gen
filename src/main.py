@@ -29,7 +29,7 @@ def main():
     try:
         if args.preprocess:
             logging.info("Starting preprocessing...")
-            features, labels = preprocess_data('dataset\dataset.pkl')
+            features, labels = preprocess_data('dataset/dataset.pkl')
 
             sample_count = min(len(features), 5)  # Ensure not to sample more than exists
             if sample_count > 0:
@@ -72,7 +72,7 @@ def main():
             generate_midi(predictions, output_file='new_midi_file.mid')
         
         if args.explore:
-            with open('dataset\dataset.pkl', 'rb') as file:
+            with open('dataset/dataset.pkl', 'rb') as file:
                 dataset = pickle.load(file)
             explore_data(dataset)
 
