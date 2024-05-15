@@ -1,18 +1,17 @@
 import logging
-import random
 import numpy as np
 import pickle
 
-def preprocess_data(file_path, sequence_length=16, log = False):
+def preprocess_data(file_path, sequence_length=16, log=False):
     # Load the dataset
     with open(file_path, 'rb') as file:
         dataset = pickle.load(file)
     
     # Calculate max_start and max_duration
-    max_start, max_duration = find_max_values(file_path);
+    max_start, max_duration = find_max_values(file_path)
 
     # Create vocabulary and tonic map
-    vocab, tonic_map = create_vocab(max_start, max_duration)
+    vocab, tonic_map, total_tokens = create_vocab(max_start, max_duration)
     
     logging.info(f"Max duration: {max_duration}")
 
@@ -43,12 +42,14 @@ def preprocess_data(file_path, sequence_length=16, log = False):
             if log:
                 logging.info(f"Input sequence length: {len(input_seq)}, Target sequence length: {len(target_seq)}")
 
-    return np.array(input_sequences), np.array(target_sequences)
+    return np.array(input_sequences), np.array(target_sequences), total_tokens
 
 def tokenize_note(note, root_data, piece_data, vocab, tonic_map, log=False):
     if log: logging.info("Tokenizing Note")
+
     start, end, pitch, velocity = note
     duration = end - start
+
     if log: logging.info("Calculating Bar")
     bar = start // 8  # Each bar contains 8 eighth notes
     position = start % 8
@@ -62,6 +63,33 @@ def tokenize_note(note, root_data, piece_data, vocab, tonic_map, log=False):
         root_note = root_data[bar][position]
     
     if log: logging.info(f"Root note: {root_note}")
+
+    # Validate ranges
+    max_start = 64  # Example value, adjust based on your dataset analysis
+    max_duration = 26  # Example value, adjust based on your dataset analysis
+    min_pitch, max_pitch = 12, 99
+    min_velocity, max_velocity = 0, 127
+    valid_roots = set(range(12))
+    valid_modes = {'M', 'm'}
+    valid_styles = {'pop_standard', 'pop_complex', 'dark', 'r&b', 'unknown'}
+    valid_tonics = set(range(12))
+
+    if not (0 <= start <= max_start):
+        logging.error(f"Start time out of range: {start}")
+    if not (0 <= duration <= max_duration):
+        logging.error(f"Duration out of range: {duration}")
+    if not (min_pitch <= pitch <= max_pitch):
+        logging.error(f"Pitch out of range: {pitch}")
+    if not (min_velocity <= velocity <= max_velocity):
+        logging.error(f"Velocity out of range: {velocity}")
+    if root_note not in valid_roots:
+        logging.error(f"Root note out of range: {root_note}")
+    if piece_data['mode'] not in valid_modes:
+        logging.error(f"Mode out of range: {piece_data['mode']}")
+    if piece_data['style'] not in valid_styles:
+        logging.error(f"Style out of range: {piece_data['style']}")
+    if int(piece_data['tonic']) not in valid_tonics:
+        logging.error(f"Tonic out of range: {piece_data['tonic']}")
     
     try:
         if log: logging.info(f"Start: {start}")
@@ -103,40 +131,33 @@ def tokenize_note(note, root_data, piece_data, vocab, tonic_map, log=False):
         logging.error(f"Unexpected error: {e}")
         raise
 
-    
-    except KeyError as e:
-        logging.error(f"KeyError: {e}")
-        raise
-
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-        raise
-    
-    except KeyError as e:
-        logging.error(f"KeyError: {e}")
-        raise
-
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-        raise
-
 def create_vocab(max_start, max_duration):
     note_names = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
     tonic_map = {i: note_names[i] for i in range(12)}
 
     vocab = {
-        'pitch': {pitch: idx for idx, pitch in enumerate(range(21, 109), 1)},  # MIDI pitches range from 21 to 108
-        'velocity': {vel: idx+89 for idx, vel in enumerate(range(128))},  # MIDI velocities range from 0 to 127, index starts after pitch
-        'duration': {dur: idx+217 for idx, dur in enumerate(range(max_duration + 1))},  # Duration based on max_duration
-        'start_time': {start: idx+217+max_duration for idx, start in enumerate(range(max_start + 1))},  # Start time based on max_start
-        'root': {root: idx+217+max_duration+max_start for idx, root in enumerate(range(12))},  # 12 roots
-        'mode': {'M': 261, 'm': 262},  # Two modes
-        'style': {'pop_standard': 263, 'pop_complex': 264, 'dark': 265, 'r&b': 266, 'unknown': 267},  # Five styles
-        'tonic': {note: idx+268 for idx, note in enumerate(note_names)}  # 12 tonics
+        'pitch': {pitch: idx for idx, pitch in enumerate(range(12, 100), 1)},  # MIDI pitches range from 12 to 99
+        'velocity': {vel: idx+88 for idx, vel in enumerate(range(128))},  # MIDI velocities range from 0 to 127, index starts after pitch
+        'duration': {dur: idx+216 for idx, dur in enumerate(range(max_duration + 1))},  # Duration based on max_duration
+        'start_time': {start: idx+216+max_duration for idx, start in enumerate(range(max_start + 1))},  # Start time based on max_start
+        'root': {root: idx+216+max_duration+max_start for idx, root in enumerate(range(12))},  # 12 roots
+        'mode': {'M': 260, 'm': 261},  # Two modes
+        'style': {'pop_standard': 262, 'pop_complex': 263, 'dark': 264, 'r&b': 265, 'unknown': 266},  # Five styles
+        'tonic': {note: idx+267 for idx, note in enumerate(note_names)}  # 12 tonics
     }
 
-    return vocab, tonic_map
+    total_tokens = max(
+        max(vocab['pitch'].values()),
+        max(vocab['velocity'].values()),
+        max(vocab['duration'].values()),
+        max(vocab['start_time'].values()),
+        max(vocab['root'].values()),
+        max(vocab['mode'].values()),
+        max(vocab['style'].values()),
+        max(vocab['tonic'].values())
+    ) + 1 
 
+    return vocab, tonic_map, total_tokens
 
 def find_max_values(file_path):
     with open(file_path, 'rb') as file:
@@ -153,52 +174,41 @@ def find_max_values(file_path):
     logging.info(f"Max Duration: {max_duration}")
     return max_start, max_duration
 
-def explore_data(dataset):
-    import matplotlib.pyplot as plt
+def explore_data(file_path):
+    # Load the dataset
+    with open(file_path, 'rb') as file:
+        dataset = pickle.load(file)
 
-    starts = []
+    # Initialize variables to store information about notes
+    start_times = []
     durations = []
     pitches = []
-
-    sample_keys = random.sample(list(dataset.keys()), 5)
-    examples = [(key, np.array(dataset[key]['nmat'][:5])) for key in sample_keys]
+    velocities = []
 
     for piece_name, piece_data in dataset.items():
-        nmat = np.array(piece_data['nmat'])
-        starts.extend(nmat[:, 0])
-        durations.extend(nmat[:, 1] - nmat[:, 0])
-        pitches.extend(nmat[:, 2])
+        notes = np.array(piece_data['nmat'])
+        
+        start_times.extend(notes[:, 0])
+        durations.extend(notes[:, 1] - notes[:, 0])
+        pitches.extend(notes[:, 2])
+        velocities.extend(notes[:, 3])
 
-    plt.figure(figsize=(14, 4))
-    plt.subplot(1, 3, 1)
-    plt.hist(starts, bins=50, color='blue')
-    plt.title('Note Starts')
-    plt.xlabel('Start Time')
-    plt.ylabel('Frequency')
+    # Calculate statistics
+    avg_start = np.mean(start_times)
+    avg_duration = np.mean(durations)
+    avg_pitch = np.mean(pitches)
+    avg_velocity = np.mean(velocities)
 
-    plt.subplot(1, 3, 2)
-    plt.hist(durations, bins=50, color='red')
-    plt.title('Note Durations')
-    plt.xlabel('Duration')
-    plt.ylabel('Frequency')
+    logging.info(f"Average start time: {avg_start}")
+    logging.info(f"Average duration: {avg_duration}")
+    logging.info(f"Average pitch: {avg_pitch}")
+    logging.info(f"Average velocity: {avg_velocity}")
 
-    plt.subplot(1, 3, 3)
-    plt.hist(pitches, bins=50, color='green')
-    plt.title('Pitch Usage')
-    plt.xlabel('MIDI Pitch Number')
-    plt.ylabel('Frequency')
+    # Additional logging for out-of-range pitches
+    pitch_min = np.min(pitches)
+    pitch_max = np.max(pitches)
+    logging.info(f"Pitch range: {pitch_min} to {pitch_max}")
 
-    plt.tight_layout()
-    plt.show()
-
-    # Output some examples from the dataset
-    for name, example in examples:
-        print(f"Example from {name}:")
-        print(f"Note data: {example}")
-        print("Starts, Ends, Pitches, Velocities")
-        for note in example:
-            print(f"{note[0]}, {note[1]}, {note[2]}, {note[3]}")
-
-    # Optionally, output some numeric statistics
-    print(f"Average note start: {np.mean(starts):.2f}, Average duration: {np.mean(durations):.2f}, Average pitch: {np.mean(pitches):.2f}")
-    print(f"Total pieces analyzed: {len(dataset)}")
+    out_of_range_pitches = [pitch for pitch in pitches if pitch < 12 or pitch > 99]
+    if out_of_range_pitches:
+        logging.warning(f"Out-of-range pitches detected: {out_of_range_pitches}")
