@@ -29,7 +29,7 @@ def main():
     try:
         if args.preprocess:
             logging.info("Starting preprocessing...")
-            features, labels = preprocess_data('dataset/dataset.pkl')
+            features, labels, vocab_size = preprocess_data('dataset/dataset.pkl')
 
             sample_count = min(len(features), 5)  # Ensure not to sample more than exists
             if sample_count > 0:
@@ -56,7 +56,7 @@ def main():
                 return
             logging.info("Starting model training...")
             X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, labels)
-            model = train_model(X_train, y_train, X_val, y_val, input_shape=X_train.shape[1:])
+            model = train_model(X_train, y_train, X_val, y_val, vocab_size=vocab_size, input_shape=X_train.shape[1:])
             logging.info("Model training complete.")
 
         if args.evaluate:
@@ -72,9 +72,7 @@ def main():
             generate_midi(predictions, output_file='new_midi_file.mid')
         
         if args.explore:
-            with open('dataset/dataset.pkl', 'rb') as file:
-                dataset = pickle.load(file)
-            explore_data(dataset)
+            explore_data('dataset/dataset.pkl')
 
 
     except Exception as e:
