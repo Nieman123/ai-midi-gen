@@ -75,3 +75,4 @@ dataset
 *.keras
 logs
 checkpoints
+*.mid
