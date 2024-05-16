@@ -56,7 +56,7 @@ def main():
                 return
             logging.info("Starting model training...")
             X_train, X_val, X_test, y_train, y_val, y_test = split_data(features, labels)
-            model = train_model(X_train, y_train, X_val, y_val, vocab_size=vocab_size, input_shape=X_train.shape[1:])
+            model = train_model(X_train, y_train, X_val, y_val, vocab_size=vocab_size)
             logging.info("Model training complete.")
 
         if args.evaluate:
