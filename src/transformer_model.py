@@ -14,21 +14,21 @@ def transformer_block(inputs, head_size, num_heads, ff_dim, dropout=0):
     ffn_output = Dropout(dropout)(ffn_output)
     return LayerNormalization(epsilon=1e-6)(out1 + ffn_output)
 
-def build_transformer_model(input_shape, vocab_size, embed_dim=128, num_heads=8, ff_dim=128, num_layers=4):
+def build_transformer_model(input_shape, total_tokens, embed_dim=128, num_heads=8, ff_dim=128, num_layers=4):
     inputs = Input(shape=input_shape)
-    embedding_layer = Embedding(input_dim=vocab_size, output_dim=embed_dim)(inputs)
+    embedding_layer = Embedding(input_dim=total_tokens, output_dim=embed_dim)(inputs)
 
     x = embedding_layer
     for _ in range(num_layers):
-        x = LayerNormalization(epsilon=1e-6)(x)
-        attention_output = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)(x, x)
-        x = Dropout(0.1)(attention_output + x)  # Skip connection
-        x = LayerNormalization(epsilon=1e-6)(x)
-        ff_output = Dense(ff_dim, activation='relu')(x)
-        x = Dropout(0.1)(ff_output + x)  # Skip connection
+        x = transformer_block(x, head_size=embed_dim, num_heads=num_heads, ff_dim=ff_dim, dropout=0.1)
 
-    outputs = Dense(vocab_size, activation='softmax')(x)
+    outputs = Dense(total_tokens, activation='softmax')(x)
+    
     model = Model(inputs=inputs, outputs=outputs)
     
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    model.compile(
+        optimizer='adam', 
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
     return model

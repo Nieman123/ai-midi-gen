@@ -1,5 +1,6 @@
 import argparse
 import logging
+import coloredlogs
 import pickle
 import numpy as np
 from keras.models import load_model
@@ -9,26 +10,15 @@ from feature_engineering import find_max_duration
 from train_model import train_model
 from split_data import split_data
 
-def main():
+def main(args):
     
     logging.basicConfig(level=logging.INFO)
-
-    parser = argparse.ArgumentParser(description="AI MIDI Generator")
-    parser.add_argument('--preprocess', action='store_true', help='Run data preprocessing')
-    parser.add_argument('--feature_engineering', action='store_true', help='Run feature engineering')
-    parser.add_argument('--train', action='store_true', help='Run model training')
-    parser.add_argument('--evaluate', action='store_true', help='Evaluate the model')
-    parser.add_argument('--generate', action='store_true', help='Generate new MIDI progressions')
-    parser.add_argument('--explore', action='store_true', help='Explore dataset statistics')
-
-
-    args = parser.parse_args()
 
     features, labels = None, None
 
     try:
         if args.preprocess:
-            logging.info("Starting preprocessing...")
+            
             features, labels, vocab_size = preprocess_data('dataset/dataset.pkl')
 
             sample_count = min(len(features), 5)  # Ensure not to sample more than exists
@@ -49,7 +39,6 @@ def main():
                 logging.info(f"Labels mean: {np.mean(labels, axis=0)}")
                 logging.info(f"Labels std dev: {np.std(labels, axis=0)}")
 
-
         if args.train:
             if features is None or labels is None:
                 logging.error("Training requires preprocessed data. Run with --preprocess first.")
@@ -64,20 +53,26 @@ def main():
             pass
 
         if args.generate:
-            model = load_model('transformer_midi_gen.keras')
-            # Retrieve the vocabulary size from the embedding layer
-            embedding_layer = model.get_layer(index=1)
-            vocab_size = embedding_layer.input_dim
-            # Example seed sequence with all note attributes
-            seed_sequence = [{
-                    'pitch': np.random.randint(60, 72),  # Random pitch between C4 and B4
-                    'start': i,
-                    'duration': 1
-                } for i in range(128)]
+            model = tf.keras.models.load_model("transformer_midi_gen.keras")
+            logger.info("Model loaded successfully.")
+            
+            # Retrieve the embedding layer
+            embedding_layer = model.layers[1]
 
-            generated_sequence = generate_midi(model, seed_sequence, sequence_length=128, num_notes=100)
+            if isinstance(embedding_layer, tf.keras.layers.Embedding):
+                total_tokens = embedding_layer.input_dim
+                logger.info(f"Total Tokens: {total_tokens}")
+            else:
+                logger.error("The retrieved layer is not an Embedding layer")
+                return
+
+            seed_sequence = [np.random.randint(0, total_tokens) for _ in range(128)]
+
+            generated_sequence = generate_midi(model, seed_sequence, sequence_length=128, num_notes=100, total_tokens=total_tokens)
             sequence_to_midi(generated_sequence, output_file='generated_midi.mid', tempo=120)
             play_midi('generated_midi.mid')
+
+            logger.info("Main process finished.")
 
         
         if args.explore:
@@ -88,4 +83,11 @@ def main():
         logging.error(f"Error occurred: {e}")
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="MIDI Generation Script")
+    parser.add_argument('--train', action='store_true', help='Train the model')
+    parser.add_argument('--preprocess', action='store_true', help='Preprocess the data')
+    parser.add_argument('--generate', action='store_true', help='Generate MIDI')
+    parser.add_argument('--data_path', type=str, help='Path to the dataset file')
+    args = parser.parse_args()
+
+    main(args)

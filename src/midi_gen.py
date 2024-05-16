@@ -10,21 +10,20 @@ import coloredlogs
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger, fmt='%(asctime)s - %(levelname)s - %(message)s')
 
-def generate_midi(model, seed_sequence, sequence_length=128, num_notes=100, vocab_size=128):
+def generate_midi(model, seed_sequence, sequence_length=128, num_notes=100, total_tokens=128):
     logger.info("Starting MIDI generation...")
     generated_sequence = seed_sequence.copy()
     
     for i in range(num_notes):
-        input_sequence = [note_to_index(note, vocab_size) for note in generated_sequence[-sequence_length:]]
+        input_sequence = [note for note in generated_sequence[-sequence_length:]]
         input_sequence = np.array(input_sequence)
         input_sequence = np.expand_dims(input_sequence, axis=0)
         
         predicted_probs = model.predict(input_sequence)
-        logger.info(f"Perdicted Probs: {predicted_probs}")
-        predicted_note_index = np.argmax(predicted_probs, axis=-1)[0, -1]
+        predicted_token_index = np.argmax(predicted_probs, axis=-1)[0, -1]
         
-        new_note = index_to_note(predicted_note_index, start=len(generated_sequence), duration=1)
-        logger.info(f"New Note Data: {new_note}")
+        new_note = decode_token(predicted_token_index)
+        
         generated_sequence.append(new_note)
         
         logger.debug(f"Generated note {i+1}/{num_notes}: {new_note}")
@@ -56,6 +55,28 @@ def sequence_to_midi(sequence, output_file='generated_midi.mid', tempo=120):
     midi.instruments.append(instrument)
     midi.write(output_file)
     logger.info(f"MIDI file {output_file} created successfully.")
+
+def decode_token(token):
+    # Decode the token back into note attributes
+    start = token['start']
+    duration = token['duration']
+    pitch = token['pitch']
+    velocity = token['velocity']
+    root = token['root']
+    mode = token['mode']
+    style = token['style']
+    tonic = token['tonic']
+    
+    return {
+        'start': start,
+        'duration': duration,
+        'pitch': pitch,
+        'velocity': velocity,
+        'root': root,
+        'mode': mode,
+        'style': style,
+        'tonic': tonic
+    }
 
 def note_to_index(note, vocab_size):
     # A simple encoding function, adjust according to your actual encoding logic
