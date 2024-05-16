@@ -3,7 +3,7 @@ import logging
 import pickle
 import numpy as np
 from keras.models import load_model
-from midi_gen import generate_midi
+from midi_gen import generate_midi, play_midi, sequence_to_midi
 from preprocess_data import preprocess_data, explore_data
 from feature_engineering import find_max_duration
 from train_model import train_model
@@ -64,12 +64,21 @@ def main():
             pass
 
         if args.generate:
-            model = load_model('crappy_midi_gen.keras')
+            model = load_model('transformer_midi_gen.keras')
+            # Retrieve the vocabulary size from the embedding layer
+            embedding_layer = model.get_layer(index=1)
+            vocab_size = embedding_layer.input_dim
+            # Example seed sequence with all note attributes
+            seed_sequence = [{
+                    'pitch': np.random.randint(60, 72),  # Random pitch between C4 and B4
+                    'start': i,
+                    'duration': 1
+                } for i in range(128)]
 
-            input_data = np.random.rand(1, 1, 64)  # Adjust shape to match training input
-            predictions = model.predict(input_data)
-            logging.info(str(predictions))
-            generate_midi(predictions, output_file='new_midi_file.mid')
+            generated_sequence = generate_midi(model, seed_sequence, sequence_length=128, num_notes=100)
+            sequence_to_midi(generated_sequence, output_file='generated_midi.mid', tempo=120)
+            play_midi('generated_midi.mid')
+
         
         if args.explore:
             explore_data('dataset/dataset.pkl')

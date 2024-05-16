@@ -1,7 +1,7 @@
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Embedding, MultiHeadAttention, LayerNormalization, Dropout
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import Model # type: ignore
+from tensorflow.keras.layers import Input, Dense, Embedding, MultiHeadAttention, LayerNormalization, Dropout # type: ignore
+from tensorflow.keras.optimizers import Adam # type: ignore
 
 def transformer_block(inputs, head_size, num_heads, ff_dim, dropout=0):
     attn_output = MultiHeadAttention(key_dim=head_size, num_heads=num_heads, dropout=dropout)(inputs, inputs)
