@@ -1,5 +1,5 @@
 from transformer_model import build_transformer_model
-from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, TensorBoard, ModelCheckpoint
+from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, TensorBoard, ModelCheckpoint # type: ignore
 import tensorflow as tf
 import math
 import os

@@ -74,3 +74,4 @@ secret.py
 dataset
 *.keras
 logs
+checkpoints
