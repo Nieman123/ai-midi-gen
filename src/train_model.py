@@ -1,5 +1,5 @@
 from transformer_model import build_transformer_model
-from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, TensorBoard
+from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler, TensorBoard, ModelCheckpoint
 import tensorflow as tf
 import math
 import os
@@ -24,8 +24,24 @@ def train_model(X_train, y_train, X_val, y_val, vocab_size, sequence_length=128,
     log_dir = os.path.join("logs", "fit", datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
+    #Checkpoints
+    checkpoint_filepath = 'checkpoints/checkpoint'
+    checkpoint_callback = ModelCheckpoint(
+        filepath=checkpoint_filepath,
+        save_weights_only=True,
+        monitor='val_loss',
+        mode='min',
+        save_best_only=True
+    )
+
     model = build_transformer_model(input_shape=(sequence_length,), vocab_size=vocab_size)
-    model.fit(train_dataset, epochs=100, batch_size=32, validation_data=val_dataset, callbacks=[early_stopping, lrate, tensorboard_callback])
+
+    # Load the latest checkpoint if it exists
+    if os.path.exists(checkpoint_filepath):
+        model.load_weights(checkpoint_filepath)
+        print("Loaded model from checkpoint")
+
+    model.fit(train_dataset, epochs=100, batch_size=32, validation_data=val_dataset, callbacks=[early_stopping, lrate, tensorboard_callback, checkpoint_callback])
     model.save("transformer_midi_gen.keras")
     return model
 
