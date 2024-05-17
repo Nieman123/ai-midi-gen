@@ -1,5 +1,6 @@
 import argparse
 import logging
+import tensorflow as tf
 import coloredlogs
 import pickle
 import numpy as np
@@ -48,31 +49,45 @@ def main(args):
             model = train_model(X_train, y_train, X_val, y_val, vocab_size=vocab_size)
             logging.info("Model training complete.")
 
-        if args.evaluate:
-            # evaluate_model(model)
-            pass
-
         if args.generate:
             model = tf.keras.models.load_model("transformer_midi_gen.keras")
-            logger.info("Model loaded successfully.")
+            logging.info("Model loaded successfully.")
             
             # Retrieve the embedding layer
             embedding_layer = model.layers[1]
 
             if isinstance(embedding_layer, tf.keras.layers.Embedding):
                 total_tokens = embedding_layer.input_dim
-                logger.info(f"Total Tokens: {total_tokens}")
+                logging.info(f"Total Tokens: {total_tokens}")
             else:
-                logger.error("The retrieved layer is not an Embedding layer")
+                logging.error("The retrieved layer is not an Embedding layer")
                 return
 
             seed_sequence = [np.random.randint(0, total_tokens) for _ in range(128)]
+
+            # Generate a seed sequence with properly formatted note dictionaries
+            seed_sequence = []
+            for _ in range(128):
+                pitch = np.random.randint(12, 100)  # Example range for pitch
+                start = np.random.randint(0, 64)    # Example range for start time
+                duration = np.random.randint(1, 27) # Example range for duration
+                velocity = np.random.randint(0, 128) # Example range for velocity
+                seed_sequence.append({
+                    'pitch': pitch,
+                    'start': start,
+                    'duration': duration,
+                    'velocity': velocity,
+                    'root': np.random.randint(0, 12),  # Example range for root
+                    'mode': 'M' if np.random.rand() > 0.5 else 'm',  # Example mode
+                    'style': np.random.choice(['pop_standard', 'pop_complex', 'dark', 'r&b', 'unknown']),  # Example styles
+                    'tonic': np.random.choice(['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'])  # Example tonics
+                })
 
             generated_sequence = generate_midi(model, seed_sequence, sequence_length=128, num_notes=100, total_tokens=total_tokens)
             sequence_to_midi(generated_sequence, output_file='generated_midi.mid', tempo=120)
             play_midi('generated_midi.mid')
 
-            logger.info("Main process finished.")
+            logging.info("Main process finished.")
 
         
         if args.explore:

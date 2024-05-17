@@ -172,6 +172,7 @@ def find_max_values(file_path):
         max_duration = max(max_duration, np.max(durations))
 
     logging.info(f"Max Duration: {max_duration}")
+    logging.info(f"Max Start: {max_start}")
     return max_start, max_duration
 
 def explore_data(file_path):

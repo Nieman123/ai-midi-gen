@@ -34,7 +34,7 @@ def train_model(X_train, y_train, X_val, y_val, vocab_size, sequence_length=128,
         save_best_only=True
     )
 
-    model = build_transformer_model(input_shape=(sequence_length,), vocab_size=vocab_size)
+    model = build_transformer_model(input_shape=(sequence_length,), total_tokens=vocab_size)
 
     # Load the latest checkpoint if it exists
     if os.path.exists(checkpoint_filepath):
